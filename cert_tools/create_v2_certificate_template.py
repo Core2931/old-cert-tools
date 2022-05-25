@@ -100,7 +100,7 @@ def create_assertion_section(config):
         ],
         'type': 'Assertion',
         'displayHtml': config.display_html,
-        'issuedOn': '*|DATE|*',
+        'issuedOn': '5/24/2022',
         'id': helpers.URN_UUID_PREFIX + '*|CERTUID|*'
     }
     return assertion
@@ -192,7 +192,7 @@ def get_config():
 def main():
     conf = get_config()
     write_certificate_template(conf)
-    print('Created template!2')
+    print('Created template!2_venv')
 
 
 if __name__ == "__main__":

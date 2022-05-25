@@ -138,7 +138,7 @@ def get_config():
 def main():
     conf = get_config()
     template = create_certificate_template(conf)
-    print('Created template!1.2')
+    print('Created template!1_2venv')
 
 
 if __name__ == "__main__":

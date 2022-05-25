@@ -6,14 +6,12 @@ unsigned certificates that can be given to cert-issuer.
 '''
 import copy
 import csv
-import hashlib
 import json
 import os
 import uuid
 
 import configargparse
 
-from cert_core.cert_model.model import scope_name
 from cert_schema import schema_validator
 
 from cert_tools import helpers
@@ -22,6 +20,10 @@ from cert_tools import jsonpath_helpers
 
 class Recipient:
     def __init__(self, fields):
+
+        # Name & identity aren't required fields in v3.
+        # Mostly keeping it for compatibility with existing rosters but if it's a problem,
+        # we can remove it and individual's can add them in via 'additional_per_recipient_fields'
         self.name = fields.pop('name')
         self.pubkey = fields.pop('pubkey')
         self.identity = fields.pop('identity')
@@ -29,33 +31,14 @@ class Recipient:
         self.additional_fields = fields
 
 
-def hash_and_salt_email_address(email, salt):
-    return 'sha256$' + hashlib.sha256(email + salt).hexdigest()
-
-
 def instantiate_assertion(cert, uid, issued_on):
-    cert['issuedOn'] = issued_on
+    cert['issuanceDate'] = issued_on
     cert['id'] = helpers.URN_UUID_PREFIX + uid
     return cert
 
 
-def instantiate_recipient(cert, recipient, additional_fields, hash_emails):
-
-    if hash_emails:
-        salt = helpers.encode(os.urandom(16))
-        cert['recipient']['hashed'] = True
-        cert['recipient']['salt'] = salt
-        cert['recipient']['identity'] = hash_and_salt_email_address(recipient.identity, salt)
-    else:
-        cert['recipient']['identity'] = recipient.identity
-        cert['recipient']['hashed'] = False
-
-    profile_field = scope_name('recipientProfile')
-
-    cert[profile_field] = {}
-    cert[profile_field]['type'] = ['RecipientProfile', 'Extension']
-    cert[profile_field]['name'] = recipient.name
-    cert[profile_field]['publicKey'] = recipient.pubkey
+def instantiate_recipient(cert, recipient, additional_fields):
+    cert['credentialSubject']['id'] = recipient.pubkey
 
     if additional_fields:
         if not recipient.additional_fields:
@@ -69,13 +52,13 @@ def instantiate_recipient(cert, recipient, additional_fields, hash_emails):
                 'there are fields that are not expected by the additional_per_recipient_fields configuration')
 
 
-def create_unsigned_certificates_from_roster(template, recipients, use_identities, additionalFields, hash_emails):
+def create_unsigned_certificates_from_roster(template, recipients, use_identities, additionalFields):
     issued_on = helpers.create_iso8601_tz()
 
     certs = {}
     for recipient in recipients:
         if use_identities:
-            uid = template['badge']['name'] + recipient.identity
+            uid = recipient.identity
             uid = "".join(c for c in uid if c.isalnum())
         else:
             uid = str(uuid.uuid4())
@@ -83,10 +66,10 @@ def create_unsigned_certificates_from_roster(template, recipients, use_identitie
         cert = copy.deepcopy(template)
 
         instantiate_assertion(cert, uid, issued_on)
-        instantiate_recipient(cert, recipient, additionalFields, hash_emails)
+        instantiate_recipient(cert, recipient, additionalFields)
 
-        # validate certificate before writing
-        schema_validator.validate_v2(cert)
+        # validate unsigned certificate before writing
+        schema_validator.validate_v3_beta(cert, True)
 
         certs[uid] = cert
     return certs
@@ -111,7 +94,7 @@ def instantiate_batch(config):
     recipients = get_recipients_from_roster(config)
     template = get_template(config)
     use_identities = config.filename_format == "certname_identity"
-    certs = create_unsigned_certificates_from_roster(template, recipients, use_identities, config.additional_per_recipient_fields, config.hash_emails)
+    certs = create_unsigned_certificates_from_roster(template, recipients, use_identities, config.additional_per_recipient_fields)
     output_dir = os.path.join(config.abs_data_dir, config.unsigned_certificates_dir)
     print('Writing certificates to ' + output_dir)
 
@@ -126,14 +109,12 @@ def instantiate_batch(config):
 
 def get_config():
     cwd = os.getcwd()
+
     p = configargparse.getArgumentParser(default_config_files=[os.path.join(cwd, 'conf.ini')])
     p.add('-c', '--my-config', required=False, is_config_file=True, help='config file path')
     p.add_argument('--data_dir', type=str, help='where data files are located')
-    p.add_argument('--issuer_certs_url', type=str, help='issuer certificates URL')
     p.add_argument('--template_dir', type=str, help='the template output directory')
     p.add_argument('--template_file_name', type=str, help='the template file name')
-    p.add_argument('--hash_emails', action='store_true',
-                   help='whether to hash emails in the certificate')
     p.add_argument('--additional_per_recipient_fields', action=helpers.make_action('per_recipient_fields'), help='additional per-recipient fields')
     p.add_argument('--unsigned_certificates_dir', type=str, help='output directory for unsigned certificates')
     p.add_argument('--roster', type=str, help='roster file name')

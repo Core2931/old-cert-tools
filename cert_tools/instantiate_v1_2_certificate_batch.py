@@ -123,7 +123,7 @@ def get_config():
 def main():
     conf = get_config()
     create_unsigned_certificates_from_roster(conf)
-    print('Instantiated batch!1_2')
+    print('Instantiated batch!')
 
 
 if __name__ == "__main__":
