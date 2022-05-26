@@ -1,8 +1,4 @@
-[![Build Status](https://travis-ci.org/blockchain-certificates/cert-tools.svg?branch=master)](https://travis-ci.org/blockchain-certificates/cert-tools)
 
-# V3 is available
-Blockcerts V3 is now based off W3C Verifiable Credentials specification and does not follow Open Badges V2 nomenclature anymore. To understand the differences between v2 and v3, please refer to the [docs](./docs/V3.md).
-You may also have a look at the [JSONLD and JSON-SCHEMA documents](https://github.com/blockchain-certificates/cert-schema/tree/master/cert_schema/3.0)
 
 # cert-tools
 Command line tools for designing certificate templates, instantiating a certificate batch, and import/export tasks
