@@ -21,7 +21,7 @@ BLOCKCERTS_V2_CONTEXT = BLOCKCERTS_V2_CANONICAL_CONTEXT
 
 def create_badge_section(config):
     cert_image_path = os.path.join(config.abs_data_dir, config.cert_image_file)
-    issuer_image_path = os.path.join(config.abs_data_dir, config.issuer_logo_file)
+    # issuer_image_path = os.path.join(config.abs_data_dir, config.issuer_logo_file)
     badge = {
         'type': 'BadgeClass',
         'id': helpers.URN_UUID_PREFIX + config.badge_id,
@@ -34,7 +34,7 @@ def create_badge_section(config):
             'name': config.issuer_name,
             'url': config.issuer_url,
             'email': config.issuer_email,
-            'image': helpers.encode_image(issuer_image_path),
+            # 'image': helpers.encode_image(issuer_image_path),
             'revocationList': config.revocation_list
         }
     }
@@ -100,7 +100,7 @@ def create_assertion_section(config):
         ],
         'type': 'Assertion',
         'displayHtml': config.display_html,
-        'issuedOn': '5/24/2022',
+        'issuedOn': '27 May 2022',
         'id': helpers.URN_UUID_PREFIX + '*|CERTUID|*'
     }
     return assertion
